@@ -2,22 +2,27 @@ package com.example.application.views.channel;
 
 import com.example.application.chat.ChatService;
 import com.example.application.chat.Message;
+import com.example.application.views.MainLayout;
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.messages.MessageInput;
 import com.vaadin.flow.component.messages.MessageList;
 import com.vaadin.flow.component.messages.MessageListItem;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEvent;
+import com.vaadin.flow.router.HasDynamicTitle;
 import com.vaadin.flow.router.HasUrlParameter;
 import com.vaadin.flow.router.Route;
-import org.jboss.logging.Messages;
+import com.example.application.views.lobby.LobbyView;
+
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Route(value = "channel")
+@Route(value = "channel", layout = MainLayout.class)
 public class ChannelView extends VerticalLayout
-        implements HasUrlParameter<String> {
+        implements HasUrlParameter<String>, HasDynamicTitle {
+
+    private String channelName;
 
     private final ChatService chatService;
     private final MessageList messageList;
@@ -42,10 +47,16 @@ public class ChannelView extends VerticalLayout
 
     @Override
     public void setParameter(BeforeEvent event, String channelId){
-        if(chatService.channel(channelId).isEmpty()){
-            throw new IllegalArgumentException("Invalid channel Id");
-        }
+        chatService.channel(channelId).ifPresentOrElse(
+                channel -> this.channelName = channel.name(),
+                () -> event.forwardTo(LobbyView.class)
+        );
         this.channelId = channelId;
+//        if(chatService.channel(channelId).isEmpty()){
+//            event.forwardTo(LobbyView.class);
+//        } else{
+//        this.channelId = channelId;
+//      }
     }
 
     private void sendMessage(String message){
@@ -85,6 +96,10 @@ public class ChannelView extends VerticalLayout
     protected void onAttach(AttachEvent attachEvent){
         var subscription = subscribe();
         addAttachListener(event -> subscription.dispose());
+    }
+
+    public String getPageTitle(){
+        return channelName;
     }
 
 }
